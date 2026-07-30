@@ -45,6 +45,7 @@ def get_gemini_async_client_instance(global_config):
         global_gemini_async_client = AsyncOpenAI(
             api_key=global_config["gemini_api_key"],
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+            max_retries=10,
         )
     return global_gemini_async_client
 
@@ -195,8 +196,8 @@ async def dashscope_caption_complete(
 
 ##### Gemini Configuration
 @retry(
-    stop=stop_after_attempt(10),
-    wait=wait_exponential(multiplier=2, min=3, max=30),
+    stop=stop_after_attempt(15),
+    wait=wait_exponential(multiplier=3, min=5, max=60),
     retry=retry_if_exception_type((RateLimitError, APIConnectionError)),
 )
 async def gemini_complete_if_cache(
@@ -219,6 +220,7 @@ async def gemini_complete_if_cache(
         if if_cache_return is not None and if_cache_return["return"] is not None:
             return if_cache_return["return"]
 
+    await asyncio.sleep(1.0)
     response = await gemini_async_client.chat.completions.create(
         model=model, messages=messages, **kwargs
     )
@@ -234,8 +236,8 @@ async def gemini_complete(model_name, prompt, system_prompt=None, history_messag
     return await gemini_complete_if_cache(model_name, prompt, system_prompt=system_prompt, history_messages=history_messages, **kwargs)
 
 @retry(
-    stop=stop_after_attempt(10),
-    wait=wait_exponential(multiplier=2, min=3, max=30),
+    stop=stop_after_attempt(15),
+    wait=wait_exponential(multiplier=3, min=5, max=60),
     retry=retry_if_exception_type((RateLimitError, APIConnectionError)),
 )
 async def gemini_caption_complete(model_name, content_list, **kwargs) -> str:
