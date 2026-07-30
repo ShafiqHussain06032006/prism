@@ -222,17 +222,33 @@ async def gemini_complete_if_cache(
         if if_cache_return is not None and if_cache_return["return"] is not None:
             return if_cache_return["return"]
 
-    await asyncio.sleep(1.0)
-    response = await gemini_async_client.chat.completions.create(
-        model=model, messages=messages, **kwargs
-    )
+    models_to_try = [model]
+    for alt in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro"]:
+        if alt not in models_to_try:
+            models_to_try.append(alt)
 
-    if hashing_kv is not None and use_cache:
-        await hashing_kv.upsert(
-            {args_hash: {"return": response.choices[0].message.content, "model": model}}
-        )
-        await hashing_kv.index_done_callback()
-    return response.choices[0].message.content
+    last_err = None
+    for target_model in models_to_try:
+        try:
+            await asyncio.sleep(1.0)
+            response = await gemini_async_client.chat.completions.create(
+                model=target_model, messages=messages, **kwargs
+            )
+            result = response.choices[0].message.content
+            if hashing_kv is not None and use_cache:
+                await hashing_kv.upsert(
+                    {args_hash: {"return": result, "model": target_model}}
+                )
+                await hashing_kv.index_done_callback()
+            return result
+        except Exception as e:
+            last_err = e
+            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e) or "Quota" in str(e) or "404" in str(e):
+                print(f"⚠️ Model '{target_model}' rate-limited or quota exceeded, trying fallback...")
+                await asyncio.sleep(2.0)
+                continue
+            raise e
+    raise last_err
 
 async def gemini_complete(model_name, prompt, system_prompt=None, history_messages=[], **kwargs) -> str:
     return await gemini_complete_if_cache(model_name, prompt, system_prompt=system_prompt, history_messages=history_messages, **kwargs)
@@ -250,11 +266,28 @@ async def gemini_caption_complete(model_name, content_list, **kwargs) -> str:
         {"role": "system", "content": "You are a helpful video analysis assistant."},
         {"role": "user", "content": content_list},
     ]
-    response = await client.chat.completions.create(
-        model=model_name,
-        messages=messages,
-    )
-    return response.choices[0].message.content
+    models_to_try = [model_name]
+    for alt in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro"]:
+        if alt not in models_to_try:
+            models_to_try.append(alt)
+
+    last_err = None
+    for target_model in models_to_try:
+        try:
+            await asyncio.sleep(1.0)
+            response = await client.chat.completions.create(
+                model=target_model,
+                messages=messages,
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            last_err = e
+            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e) or "Quota" in str(e) or "404" in str(e):
+                print(f"⚠️ Caption model '{target_model}' rate-limited or quota exceeded, trying fallback...")
+                await asyncio.sleep(2.0)
+                continue
+            raise e
+    raise last_err
 
 async def gemini_embedding(model_name: str, texts: list[str], **kwargs) -> np.ndarray:
     """
