@@ -273,7 +273,7 @@ async def gemini_embedding(model_name: str, texts: list[str], **kwargs) -> np.nd
         except Exception as e:
             last_err = e
             if "404" in str(e) or "NOT_FOUND" in str(e):
-                logger.info(f"Embedding model '{model}' returned 404, trying fallback...")
+                print(f"⚠️ Embedding model '{model}' returned 404, trying fallback...")
                 continue
             raise e
     raise last_err
