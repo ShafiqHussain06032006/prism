@@ -77,10 +77,10 @@ def build_llm_config(global_config: dict) -> LLMConfig:
         log_to_file(f"   analysis={analysis_model}  processing={process_model}  caption={caption_model}")
 
         return LLMConfig(
-            # Embeddings via Gemini OpenAI-compat endpoint (text-embedding-004, 768-dim)
+            # Embeddings via Gemini OpenAI-compat endpoint (gemini-embedding-001, 3072-dim)
             embedding_func_raw=gemini_embedding,
-            embedding_model_name="text-embedding-004",   # bare name, no 'models/' prefix
-            embedding_dim=768,
+            embedding_model_name="gemini-embedding-001",
+            embedding_dim=3072,
             embedding_max_token_size=3072,
             embedding_batch_num=32,
             embedding_func_max_async=16,

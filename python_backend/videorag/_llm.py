@@ -250,17 +250,33 @@ async def gemini_caption_complete(model_name, content_list, **kwargs) -> str:
 async def gemini_embedding(model_name: str, texts: list[str], **kwargs) -> np.ndarray:
     """
     Embed texts via the Gemini OpenAI-compat embeddings endpoint.
-    Uses the stable /v1beta/openai/embeddings route which accepts bare model names
-    (e.g. 'text-embedding-004', NOT 'models/text-embedding-004').
+    Uses the stable /v1beta/openai/embeddings route with automatic fallback for keys
+    that support gemini-embedding-001 instead of text-embedding-004.
     """
     global_config = kwargs.get("global_config", {})
     client = get_gemini_async_client_instance(global_config)
-    # The compat endpoint does not accept the 'models/' prefix
     bare_model = model_name.removeprefix("models/")
-    response = await client.embeddings.create(
-        model=bare_model, input=texts, encoding_format="float"
-    )
-    return np.array([dp.embedding for dp in response.data])
+    
+    # Priority list of models to attempt
+    models_to_try = [bare_model]
+    for fallback in ["gemini-embedding-001", "gemini-embedding-2", "text-embedding-004"]:
+        if fallback not in models_to_try:
+            models_to_try.append(fallback)
+            
+    last_err = None
+    for model in models_to_try:
+        try:
+            response = await client.embeddings.create(
+                model=model, input=texts, encoding_format="float"
+            )
+            return np.array([dp.embedding for dp in response.data])
+        except Exception as e:
+            last_err = e
+            if "404" in str(e) or "NOT_FOUND" in str(e):
+                logger.info(f"Embedding model '{model}' returned 404, trying fallback...")
+                continue
+            raise e
+    raise last_err
 
 openai_4o_mini_config = LLMConfig(
     embedding_func_raw = openai_embedding,
