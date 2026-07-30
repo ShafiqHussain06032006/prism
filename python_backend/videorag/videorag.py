@@ -4,7 +4,7 @@ import shutil
 import asyncio
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import Callable, Dict, List, Optional, Type, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
 import tiktoken
 import logging
 
@@ -90,6 +90,8 @@ class VideoRAG:
 
     # Google Gemini (replaces DashScope + OpenAI when set)
     gemini_api_key: str = None
+    embedder_client: Any = None
+    global_config: dict = field(default_factory=dict)
 
     # text chunking
     chunk_func: Callable[
@@ -299,7 +301,7 @@ class VideoRAG:
                 namespace="video_segment_feature",
                 global_config=self.safe_config,
                 embedding_func=None,
-                embedder_client=self.imagebind_client,
+                embedder_client=self.embedder_client,
             )
         )
         self.safe_config["video_segment_feature_vdb"] = self.video_segment_feature_vdb
