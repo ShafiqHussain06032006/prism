@@ -1,4 +1,6 @@
 # type: ignore
+import os
+import asyncio
 import numpy as np
 from openai import AsyncOpenAI, AsyncAzureOpenAI, APIConnectionError, RateLimitError
 from dataclasses import asdict, dataclass, field
