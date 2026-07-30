@@ -294,10 +294,10 @@ class GlobalImageBindManager:
                 
     def encode_video_segments(self, video_batch: List[str]) -> np.ndarray:
         """Encode video segments"""
+        if not self.is_loaded:
+            self.ensure_imagebind_loaded()
+            
         with self._lock:
-            if not self.is_loaded:
-                raise RuntimeError("ImageBind not loaded")
-                
             self.usage_count += 1
             
             from videorag._videoutil import encode_video_segments
@@ -307,10 +307,10 @@ class GlobalImageBindManager:
                 
     def encode_string_query(self, query: str) -> np.ndarray:
         """Encode string query"""
+        if not self.is_loaded:
+            self.ensure_imagebind_loaded()
+            
         with self._lock:
-            if not self.is_loaded:
-                raise RuntimeError("ImageBind not loaded")
-                
             self.usage_count += 1
             
             try:
