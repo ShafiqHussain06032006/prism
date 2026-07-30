@@ -195,8 +195,8 @@ async def dashscope_caption_complete(
 
 ##### Gemini Configuration
 @retry(
-    stop=stop_after_attempt(5),
-    wait=wait_exponential(multiplier=1, min=4, max=10),
+    stop=stop_after_attempt(10),
+    wait=wait_exponential(multiplier=2, min=3, max=30),
     retry=retry_if_exception_type((RateLimitError, APIConnectionError)),
 )
 async def gemini_complete_if_cache(
@@ -233,6 +233,11 @@ async def gemini_complete_if_cache(
 async def gemini_complete(model_name, prompt, system_prompt=None, history_messages=[], **kwargs) -> str:
     return await gemini_complete_if_cache(model_name, prompt, system_prompt=system_prompt, history_messages=history_messages, **kwargs)
 
+@retry(
+    stop=stop_after_attempt(10),
+    wait=wait_exponential(multiplier=2, min=3, max=30),
+    retry=retry_if_exception_type((RateLimitError, APIConnectionError)),
+)
 async def gemini_caption_complete(model_name, content_list, **kwargs) -> str:
     """Vision/caption completion via Gemini OpenAI-compat endpoint."""
     global_config = kwargs.get("global_config", {})

@@ -83,21 +83,21 @@ def build_llm_config(global_config: dict) -> LLMConfig:
             embedding_dim=3072,
             embedding_max_token_size=3072,
             embedding_batch_num=32,
-            embedding_func_max_async=16,
+            embedding_func_max_async=4,
             query_better_than_threshold=0.2,
             # Chat completions via Gemini OpenAI-compat endpoint
             best_model_func_raw=gemini_complete,
             best_model_name=analysis_model,
             best_model_max_token_size=1048576,
-            best_model_max_async=8,
+            best_model_max_async=2,
             cheap_model_func_raw=gemini_complete,
             cheap_model_name=process_model,
             cheap_model_max_token_size=1048576,
-            cheap_model_max_async=16,
+            cheap_model_max_async=2,
             # Vision/caption model
             caption_model_func_raw=gemini_caption_complete,
             caption_model_name=caption_model,
-            caption_model_max_async=4,
+            caption_model_max_async=2,
         )
     else:
         log_to_file("🔵 Using OpenAI backend (embeddings + LLM + DashScope caption)")
