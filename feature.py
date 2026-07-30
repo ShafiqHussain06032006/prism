@@ -2,6 +2,12 @@ import os
 import torch
 import pickle
 from tqdm import tqdm
+try:
+    import decord
+    decord.bridge.set_bridge("torch")
+except Exception:
+    pass
+
 from imagebind import data
 from imagebind.models import imagebind_model
 from imagebind.models.imagebind_model import ImageBindModel, ModalityType
