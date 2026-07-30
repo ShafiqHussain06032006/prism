@@ -57,8 +57,11 @@ def _coerce_gemini_model(name: str | None, default: str) -> str:
 
 
 def build_llm_config(global_config: dict) -> LLMConfig:
-    """Select Gemini or OpenAI backend depending on which API key is provided."""
+    """Select Gemini, Alibaba DashScope, or OpenAI backend depending on which API key is provided."""
     gemini_key = (global_config.get("gemini_api_key") or "").strip()
+    ali_key = (global_config.get("ali_dashscope_api_key") or "").strip()
+    openai_key = (global_config.get("openai_api_key") or "").strip()
+
     if gemini_key:
         # Propagate key to env so the global client singleton picks it up
         os.environ["GEMINI_API_KEY"] = gemini_key
@@ -98,6 +101,36 @@ def build_llm_config(global_config: dict) -> LLMConfig:
             caption_model_func_raw=gemini_caption_complete,
             caption_model_name=caption_model,
             caption_model_max_async=2,
+        )
+    elif ali_key and not openai_key:
+        log_to_file("🟠 Using Alibaba DashScope (Qwen) backend")
+        global_config["openai_api_key"] = ali_key
+        if not global_config.get("openai_base_url") or "openai.com" in global_config.get("openai_base_url", ""):
+            global_config["openai_base_url"] = global_config.get(
+                "ali_dashscope_base_url", "https://dashscope.aliyuncs.com/compatible-mode/v1"
+            )
+        analysis_model = global_config.get("analysisModel") or "qwen-max"
+        process_model = global_config.get("processingModel") or "qwen-plus"
+        caption_model = global_config.get("caption_model") or "qwen-vl-max"
+        return LLMConfig(
+            embedding_func_raw=openai_embedding,
+            embedding_model_name="text-embedding-v2",
+            embedding_dim=1536,
+            embedding_max_token_size=2048,
+            embedding_batch_num=16,
+            embedding_func_max_async=8,
+            query_better_than_threshold=0.2,
+            best_model_func_raw=gpt_complete,
+            best_model_name=analysis_model,
+            best_model_max_token_size=32768,
+            best_model_max_async=8,
+            cheap_model_func_raw=gpt_complete,
+            cheap_model_name=process_model,
+            cheap_model_max_token_size=32768,
+            cheap_model_max_async=8,
+            caption_model_func_raw=dashscope_caption_complete,
+            caption_model_name=caption_model,
+            caption_model_max_async=3,
         )
     else:
         log_to_file("🔵 Using OpenAI backend (embeddings + LLM + DashScope caption)")
