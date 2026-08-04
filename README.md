@@ -9,8 +9,8 @@ Prism is a state-of-the-art agentic video understanding platform built for local
 ## 🚀 Key Features
 - ⚡ **Lightning Fast**: Sub-second multimodal similarity search powered by LanceDB and CLIP.
 - 🔒 **Privacy Focused**: Operates locally with Apple Silicon Metal GPU acceleration.
-- 🌐 **Open Source**: MIT licensed for developers and the open-source community.
+- 🌐 **Open Source**: Apache 2.0 licensed for developers and the open-source community.
 - 🎯 **Built for Everyone**: From students and researchers to video professionals.
 
 ## 📜 License
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [Apache License 2.0](LICENSE).
